@@ -66,7 +66,7 @@ varying vec4 vColor;
 	uniform sampler2D ambientSampler;
 #endif
 
-#ifdef OPACITY	
+#ifdef OPACITY
 	#if OPACITYDIRECTUV == 1
 		#define vOpacityUV vMainUV1
 	#elif OPACITYDIRECTUV == 2
@@ -162,15 +162,11 @@ void main(void) {
 
 #include<clipPlaneFragment>
 
-
-
 	vec3 viewDirectionW = normalize(vEyePosition.xyz - vPositionW);
 
 	// Base color
 	vec4 baseColor = vec4(1., 1., 1., 1.);
 	vec3 diffuseColor = vDiffuseColor.rgb;
-	
-	
 
 	// Alpha
 	float alpha = vDiffuseColor.a;
@@ -199,13 +195,11 @@ void main(void) {
 	#ifdef ALPHAFROMDIFFUSE
 		alpha *= baseColor.a;
 	#endif
-	
+
 	#define CUSTOM_FRAGMENT_UPDATE_ALPHA
 
 	baseColor.rgb *= vDiffuseInfos.y;
 #endif
-
-
 
 #include<depthPrePass>
 
@@ -243,6 +237,8 @@ void main(void) {
 #else
 	float glossiness = 0.;
 #endif
+
+#define CUSTOM_FRAGMENT_AFTER_SPECULAR
 
 	// Lighting
 	vec3 diffuseBase = vec3(0., 0., 0.);
@@ -282,7 +278,7 @@ void main(void) {
 		vec2 refractionCoords = vRefractionUVW.xy / vRefractionUVW.z;
 
 		refractionCoords.y = 1.0 - refractionCoords.y;
-		
+
 		refractionColor = texture2D(refraction2DSampler, refractionCoords);
 	#endif
     #ifdef RGBDREFRACTION
@@ -456,7 +452,7 @@ color.rgb = max(color.rgb, 0.);
 #include<logDepthFragment>
 #include<fogFragment>
 
-// Apply image processing if relevant. As this applies in linear space, 
+// Apply image processing if relevant. As this applies in linear space,
 // We first move from gamma to linear.
 #ifdef IMAGEPROCESSINGPOSTPROCESS
 	color.rgb = toLinearSpace(color.rgb);
@@ -479,7 +475,7 @@ color.rgb = max(color.rgb, 0.);
 	float writeGeometryInfo = color.a > 0.4 ? 1.0 : 0.0;
 
     gl_FragData[0] = color; // We can't split irradiance on std material
-    
+
     #ifdef PREPASS_POSITION
     gl_FragData[PREPASS_POSITION_INDEX] = vec4(vPositionW, writeGeometryInfo);
     #endif
@@ -518,7 +514,7 @@ color.rgb = max(color.rgb, 0.);
     #endif
 #endif
 
-#if !defined(PREPASS) || defined(WEBGL2) 
+#if !defined(PREPASS) || defined(WEBGL2)
 	gl_FragColor = color;
 #endif
 

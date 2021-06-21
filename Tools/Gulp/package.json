@@ -15,7 +15,8 @@
         "start-public-ssl": "gulp run --max-old-space-size=8192 --public --ssl"
     },
     "dependencies": {
-        "node-sass": "^4.14.1"
+        "node-sass": "^4.14.1",
+        "tslib": "^2.3.0"
     },
     "devDependencies": {
         "gulp": "4.0.0",

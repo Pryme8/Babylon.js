@@ -26,11 +26,13 @@ export class ShaderSpecialParts {
     public Fragment_Custom_Diffuse: string;
     // lights
     public Fragment_Before_Lights: string;
+    // specular
+    public Fragment_After_Specular: string;
     // fog
     public Fragment_Before_Fog: string;
     // alpha
     public Fragment_Custom_Alpha: string;
-
+    // final Color
     public Fragment_Before_FragColor: string;
 
     public Vertex_Begin: string;
@@ -49,7 +51,6 @@ export class ShaderSpecialParts {
     // mainEnd
     public Vertex_MainEnd: string;
 }
-
 export class CustomMaterial extends StandardMaterial {
     public static ShaderIndexer = 1;
     public CustomParts: ShaderSpecialParts;
@@ -159,6 +160,7 @@ export class CustomMaterial extends StandardMaterial {
             .replace('#define CUSTOM_FRAGMENT_UPDATE_DIFFUSE', (this.CustomParts.Fragment_Custom_Diffuse ? this.CustomParts.Fragment_Custom_Diffuse : ""))
             .replace('#define CUSTOM_FRAGMENT_UPDATE_ALPHA', (this.CustomParts.Fragment_Custom_Alpha ? this.CustomParts.Fragment_Custom_Alpha : ""))
             .replace('#define CUSTOM_FRAGMENT_BEFORE_LIGHTS', (this.CustomParts.Fragment_Before_Lights ? this.CustomParts.Fragment_Before_Lights : ""))
+            .replace('#define CUSTOM_FRAGMENT_AFTER_SPECULAR', (this.CustomParts.Fragment_After_Specular ? this.CustomParts.Fragment_After_Specular : ""))
             .replace('#define CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR', (this.CustomParts.Fragment_Before_FragColor ? this.CustomParts.Fragment_Before_FragColor : ""));
 
         if (this.CustomParts.Fragment_Before_Fog) {
@@ -238,6 +240,11 @@ export class CustomMaterial extends StandardMaterial {
 
     public Fragment_Before_Lights(shaderPart: string): CustomMaterial {
         this.CustomParts.Fragment_Before_Lights = shaderPart;
+        return this;
+    }
+
+    public Fragment_After_Specular(shaderPart: string): CustomMaterial {
+        this.CustomParts.Fragment_After_Specular = shaderPart;
         return this;
     }
 
