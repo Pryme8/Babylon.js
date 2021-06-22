@@ -10,7 +10,6 @@ import { Scene } from "babylonjs/scene";
 import { Nullable } from "babylonjs/types";
 import { _TypeStore } from 'babylonjs/Misc/typeStore';
 import { CustomMaterial } from "../customMaterial";
-
 interface ISpriteMapMaterial{
     scene: Scene;
     stageSize: Vector2;
@@ -62,8 +61,6 @@ export class SpriteMapMaterial extends CustomMaterial{
         this.diffuseTexture = this._createBlankRaw();
         this.alpha = 0;
 
-        console.log(this.diffuseTexture);
-
         for (let i = 0; i < this.params.layerCount; i++) {
             this._tileBuffers.push(this._createTileBuffer(null, i));
         }
@@ -95,9 +92,8 @@ export class SpriteMapMaterial extends CustomMaterial{
             this.AddUniform('spriteSpecular', 'sampler2D', this.params.specular);
         }
 
-        if (this.params.colorMultiply) {
-            this.AddUniform('colorMultiply', 'vec3', this.params.colorMultiply);
-        }
+        this.AddUniform('colorMultiply', 'vec3', this.params.colorMultiply);
+
         const spriteMapSize = new Vector2(0, 0);
         this.AddUniform('spriteMapSize', 'vec2', spriteMapSize);
         this.AddUniform('outputSize', 'vec2', this.params.outputSize);
@@ -107,9 +103,14 @@ export class SpriteMapMaterial extends CustomMaterial{
         this._customUniform.push(`uniform sampler2D tileBuffers[int(${this.params.layerCount})];`);
         this._newUniforms.push('tileBuffers');
 
-        this.params.diffuse._texture?.onLoadedObservable.addOnce(() => {
+        if(!this.params.diffuse.isReady()){
+            this.params.diffuse.onLoadObservable.add(() => {
+                spriteMapSize.set(this.params.diffuse._texture?.baseWidth ?? 1, this.params.diffuse._texture?.baseHeight ?? 1);
+            });
+        }else{
             spriteMapSize.set(this.params.diffuse._texture?.baseWidth ?? 1, this.params.diffuse._texture?.baseHeight ?? 1);
-        });
+        }
+
 
         this.onBindObservable.addOnce(() => {
             const effect = this.getEffect();
@@ -117,7 +118,6 @@ export class SpriteMapMaterial extends CustomMaterial{
             effect.setTexture('spriteDiffuse', this.params.diffuse);
             effect.setTexture('frameBuffer', this._frameBuffer);
             effect.setTexture('animationBuffer', this._animationBuffer);
-            //effect.setVector2('spriteMapSize', spriteMapSize)
         });
 
         this.Vertex_Definitions(`varying vec2 tUV;`);
@@ -130,8 +130,6 @@ export class SpriteMapMaterial extends CustomMaterial{
             defineString += def + `
             `;
         });
-
-        console.log(defineString);
 
         this.Fragment_Begin(defineString);
 
@@ -189,7 +187,7 @@ export class SpriteMapMaterial extends CustomMaterial{
         float spriteUnits = 1. / spriteCount;
         vec2 stageUnits = 1. / stageSize;
 
-        for(int i = 0; i < LAYERS; i++) {
+        for(int i = 0; i < LAYERS + 1; i++) {
             float frameID;
 
             ${layerSampleString}
@@ -246,7 +244,7 @@ export class SpriteMapMaterial extends CustomMaterial{
         `
         );
 
-        this.Fragment_Before_Lights(
+        this.Fragment_After_Specular(
         `
         #ifdef SPRITEBUMP
             normalW = perturbNormal(TBN, sNorm, vBumpInfos.y);
@@ -255,27 +253,14 @@ export class SpriteMapMaterial extends CustomMaterial{
         #ifdef SPRITESPECULAR
         specularColor = sSpec;
         #endif
-
         `
         );
 
-        if(this.params.colorMultiply){
-            this.Fragment_Before_FragColor(`
-                color.rgb *= colorMultiply;
-                color.a = alphaFinal * visibility;
-            `);
-        }else{
-            this.Fragment_Before_FragColor(`
-                color.a = alphaFinal * visibility;
-            `);
-        }
+        this.Fragment_Before_FragColor(`
+            color.rgb *= colorMultiply;
+            color.a = alphaFinal * visibility;
+        `);
 
-        const engine = this.scene.getEngine();
-        this.onBindObservable.add(() => {
-            const effect = this.getEffect();
-            this.time += engine.getDeltaTime();
-            effect.setFloat('time', this.time);
-        });
     }
 
     private _createBlankRaw(): RawTexture {
@@ -376,7 +361,7 @@ export class SpriteMapMaterial extends CustomMaterial{
     private _createTileAnimationBuffer(buffer: Nullable<ArrayBufferView>): RawTexture {
         let data = new Array();
         let floatArray;
-        const maxAnimationFrames = this.params.maxAnimationFrames ?? 0;
+        const maxAnimationFrames = this.params.maxAnimationFrames ?? 1;
         if (!buffer) {
             for (let i = 0; i < this.spriteCount; i++) {
                 data.push(0, 0, 0, 0);
